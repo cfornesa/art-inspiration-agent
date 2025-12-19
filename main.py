@@ -32,10 +32,13 @@ Then, use deductive reasoning to answer the question, ensuring that specific cre
 
 Then, cite each source using a link to the source.
 
+CRITICAL LINK RULE: Do not invent specific sub-page URLs. If you are not 100% certain a direct URL exists, provide only the homepage of the high-authority domain (e.g., https://tate.org.uk/) and include a 'Search Term' for the user instead. Prioritize accuracy over specificity. Do not use the "www" subdomain. For example, use "https://tate.org.uk/" instead of "https://www.tate.org.uk/".
+
 Keep bullet point answers to 5 bullet points (or less) with up to 100 words that best summarize a quality answer.
 
 Keep sentence answers to a maximum of 250 words total, no matter the complexity of the question.
 """
+
 INFORMATION = """
 Be mindful of any items in the memory and make sure that the logic follows in subsequent outputs.
 """
@@ -46,19 +49,19 @@ Respond in this format:
 ```
 Question: <question>
 
-Bullet Point Answer:
+Bullet Point Explanation:
 - <bullet point 1>
 - <bullet point 2>
 - ...
-- <bullet point n >= 5>
+- <bullet point n>
 
-Resources:
+Resources and Search Terms:
 - <citation 1>
 - <citation 2>
 - ...
 - <citation n>
 
-Paragraph Answer:
+Paragraph Explanation:
 <Paragraph answer>
 ```
 """
