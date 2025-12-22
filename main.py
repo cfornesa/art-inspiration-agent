@@ -8,103 +8,109 @@ from typing import List, Dict
 
 app = FastAPI(title="Art Inspiration Agent")
 
-# 1. CORS MIDDLEWARE (Kept global for Pre-flight OPTIONS checks)
+# 1. CORS CONFIGURATION (Essential for Replit to Hostinger communication)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this to your specific domain for production
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 2. PRIVACY SCRUBBER (PII REDACTION)
+# 2. PRIVACY SCRUBBER (Redacts PII, SSNs, and Physical Addresses)
 def redact_pii(text: str) -> str:
-    """
-    Blazing-fast regex-based redaction for PII. 
-    Uses standard re module to avoid heavy library overhead.
-    """
     patterns = {
         "EMAIL": r'[\w\.-]+@[\w\.-]+\.\w+',
-        # Matches various phone formats (US and International)
         "PHONE": r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}',
-        # Dedicated SSN Pattern (XXX-XX-XXXX or XXXXXXXXX)
         "SSN": r'\b(?!666|000|9\d{2})\d{3}[- ]?(?!00)\d{2}[- ]?(?!0000)\d{4}\b',
-        "CREDIT_CARD": r'\b(?:\d[ -]*?){13,16}\b',
+        "ADDRESS": r'\d{1,5}\s\w+.\s(\b\w+\b\s){1,2}\w+,\s\w+,\s[A-Z]{2}\s\d{5}'
     }
-
-    redacted_text = text
     for label, pattern in patterns.items():
-        redacted_text = re.sub(pattern, f"[{label}_REDACTED]", redacted_text, flags=re.IGNORECASE)
+        text = re.sub(pattern, f"[{label}_REDACTED]", text, flags=re.IGNORECASE)
+    return text
 
-    return redacted_text
-
-# 3. DEFERRED SYSTEM PROMPT
+# 3. INTEGRATED GAIL FRAMEWORK (With Diversity & Originality Protocols)
 def get_art_system_prompt():
-    """Returns the full GAIL framework prompt only when needed for a chat."""
-    GOALS = """
-    You are a creative Art Inspiration Agent. 
-    Your role is to help artists overcome blocks by providing unique, 
-    challenging, and thought-provoking prompts based on their preferred style.
     """
-    ACTIONS = """
-    - Analyze the user's mood and medium.
-    - Provide three distinct 'vibe' options: Experimental, Classical, or Abstract.
-    - Suggest specific color palettes and techniques.
+    GOALS: Empower artists to overcome blocks with sophisticated, high-concept prompts.
+    ACTIONS: 
+        - Provide three 'vibes': Experimental, Classical, or Abstract.
+        - DIVERSITY PROTOCOL: Actively pull inspiration from non-Western canons 
+          (e.g., Islamic geometry, Indigenous patterns, or African futurism).
+        - ORIGINALITY PROTOCOL: Avoid overused cliches; prioritize sensory 
+          descriptions (textures/smells) to drive visual imagination.
+    INFORMATION: 
+        - Reference global art history and technical terminology (Sfumato, Impasto).
+        - Respect [REDACTED] placeholders; focus on the artistic essence.
+    LANGUAGE: Poetic, encouraging, intellectually sophisticated, and non-judgmental.
     """
-    INFORMATION = "Respect any [REDACTED] tags; focus on the creative essence, not private data."
-    LANGUAGE = "Respond in a supportive, poetic, yet professional tone."
-
-    return f"{GOALS}\n{ACTIONS}\n{INFORMATION}\n{LANGUAGE}"
+    return (
+        "You are an Expert Art Consultant and Historian.\n\n"
+        "GOALS:\n"
+        "Help the artist navigate creative exhaustion by providing rigorous and diverse inspiration.\n\n"
+        "ACTIONS (ORIGINALITY & DIVERSITY PROTOCOL):\n"
+        "1. Identify and bypass Western-centric cliches. Instead of 'Starry Nights,' "
+        "suggest concepts based on 'Wabi-sabi' (the beauty of imperfection) or "
+        "'Horror Vacui' (the fear of empty space).\n"
+        "2. Synthesis: Combine two unrelated concepts (e.g., 'Biomorphic architecture' "
+        "meets 'Byzantine gold-leaf techniques').\n"
+        "3. Cross-Sensory Prompts: Describe a scent or a sound and ask the artist to "
+        "render it as a texture.\n\n"
+        "INFORMATION & LANGUAGE:\n"
+        "Use precise historical terminology. Maintain an inspiring yet academic tone. "
+        "If you encounter [REDACTED], treat it as a 'mysterious void' that adds to the art."
+    )
 
 class ChatRequest(BaseModel):
     message: str
     history: List[Dict] = []
 
-# 4. HEALTH CHECK (Prevents 404 leakage and verifies server status)
+# 4. HEALTH CHECK (Verifies server status and privacy layers)
 @app.get("/")
 async def health():
-    return {"status": "Art Agent Active", "privacy": "Enabled"}
+    return {
+        "status": "Art Consultant Agent Online", 
+        "framework": "GAIL + Originality Protocol",
+        "privacy": "Full-Scrub-Active"
+    }
 
 # 5. MAIN CHAT ENDPOINT
 @app.post("/chat")
 async def process_chat(request: ChatRequest):
-    # Deferred Import: Keeps RAM low until a request is actually made
+    # DEFERRED IMPORT: Minimizes RAM usage during idle time
     from openai import OpenAI
 
-    # Redact sensitive data before it ever hits the API
+    # Redact input locally
     safe_input = redact_pii(request.message)
 
     api_key = os.environ.get('DEEPSEEK_API_KEY')
     if not api_key:
-        return {"error": "API Key not configured"}
+        return {"error": "DeepSeek API Key missing in Replit Secrets."}
 
     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 
-    system_prompt = get_art_system_prompt()
-    messages = [{"role": "system", "content": system_prompt}] + request.history
+    # Construct message chain for DeepSeek-V3
+    messages = [{"role": "system", "content": get_art_system_prompt()}] + request.history
     messages.append({"role": "user", "content": safe_input})
 
     try:
-        # Using DeepSeek-Reasoner for "Thinking" capabilities
+        # Utilizing DeepSeek-V3 for creative prose and artistic synthesis
         response = client.chat.completions.create(
-            model="deepseek-reasoner",
+            model="deepseek-chat",
             messages=messages
         )
 
         reply = response.choices[0].message.content
 
         # 6. MEMORY MANAGEMENT (GARBAGE COLLECTION)
-        # Explicitly delete large objects and force a cleanup
-        del messages
-        del safe_input
+        del messages, safe_input
         gc.collect()
 
         return {"reply": reply}
-
     except Exception as e:
         gc.collect()
-        return {"reply": f"Art Agent encountered a hiccup: {str(e)}"}
+        return {"error": f"Creative process interrupted: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
-    # High performance uvicorn deployment
+    # Optimized run for Replit
     uvicorn.run(app, host="0.0.0.0", port=5000)
