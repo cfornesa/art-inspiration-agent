@@ -8,7 +8,10 @@ from typing import List, Dict
 
 app = FastAPI(title="Art Inspiration Agent")
 
-# 1. CORS CONFIGURATION: Enables the secure handshake between Replit and Hostinger.
+# 1. CORS PROTOCOL (Cross-Origin Resource Sharing)
+# Conceptual Explanation: This acts as a digital handshake, allowing the 
+# Hostinger-hosted UI to securely communicate with the Replit-hosted logic 
+# while bypassing default browser security restrictions on cross-domain requests.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,7 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. PRIVACY SCRUBBER: Sanitizes input locally to protect user identity.
+# 2. PRIVACY SCRUBBER (PII Sanitization)
+# Conceptual Explanation: Implements "Privacy-by-Design." By using Regex to 
+# redact sensitive data patterns (Emails, SSNs, Addresses) locally, we minimize 
+# the risk of leaking user PII to the LLM or external logs.
 def redact_pii(text: str) -> str:
     patterns = {
         "EMAIL": r'[\w\.-]+@[\w\.-]+\.\w+',
@@ -28,39 +34,35 @@ def redact_pii(text: str) -> str:
         text = re.sub(pattern, f"[{label}_REDACTED]", text, flags=re.IGNORECASE)
     return text
 
-# 3. GAIL ART SYNTHESIS PROMPT: The core analytical engine.
+# 3. GAIL ART SYNTHESIS PROMPT (The "Synthesis" Logic)
+# Conceptual Explanation: This protocol anchors the AI in a specific workflow: 
+# Context (Theory) -> Material (Chemistry) -> Technique (Studio Application). 
+# It prevents "shallow" AI responses by forcing a multidisciplinary analysis.
 def get_art_system_prompt():
-    """
-    CONCEPTUAL ANNOTATIONS:
-    - SYNTHESIS: Forces a transition from theory (Why) to studio practice (How).
-    - ARCHIVAL MANDATE: Anchors advice in material chemistry (pH-neutral, lightfastness).
-    - SEARCH-PATH: Solves link hallucinations by generating dynamic search strings.
-    """
     return (
         "You are an Expert Art Consultant. YOU MUST RESPOND IN ENGLISH ONLY.\n\n"
         "GOALS:\n"
         "Provide dense, actionable, and synthesized expertise. Transition from theory to studio practice.\n\n"
-        "ACTIONS (SYNTHESIS & SCOPE):\n"
-        "1. DUAL-INTENT HANDLING: Follow: Context -> Material Properties -> Technical Application.\n"
-        "2. TECHNICAL PRECISION: Specify archival standards (pH-neutral, lightfastness) in every process.\n"
-        "3. STUDIO RESEARCH PATH: At the end of every response, provide a 'Technical Deep Dive' link.\n"
-        "   Format: https://www.google.com/search?q=[Topic+Material+Technique+Tutorial]\n"
-        "4. SCOPE CONTROL: For non-art topics, state 'I focus solely on art' and pivot to a technique.\n\n"
-        "INFORMATION:\n"
-        "Treat 'Redaction' as a conceptual artistic topic. Use bullet points for material lists.\n\n"
-        "LANGUAGE: EXECUTIVE CONCISCENESS. Keep responses under 400 words. STRICTLY ENGLISH ONLY."
+        "ACTIONS:\n"
+        "1. DUAL-INTENT HANDLING: Structure as: (A) Conceptual Framework, (B) Material & Technical Application, and (C) Archival Standard.\n"
+        "2. TECHNICAL PRECISION: Specify archival chemistry (pH-neutral, lightfastness, acid-free) in every process.\n"
+        "3. RELEVANT LINKS: End every response with: Relevant Links: https://www.google.com/search?q=[Topic+Material+Technique+Tutorial]\n"
+        "4. SCOPE CONTROL: For non-art topics, state 'I focus solely on art' and pivot to an artistic technique.\n\n"
+        "LANGUAGE: EXECUTIVE CONCISCENESS. RESPOND IN ENGLISH ONLY. LIMIT: 400 words."
     )
 
+# 4. DATA MODELING (Pydantic Schema)
+# Conceptual Explanation: Ensures the structural integrity of the request. 
+# It validates that the incoming payload contains both the current message 
+# and the conversation history necessary for maintaining stateful dialogue.
 class ChatRequest(BaseModel):
     message: str
     history: List[Dict] = []
 
-# 4. HEALTH CHECK: Confirms server and privacy status.
-@app.get("/")
-async def health():
-    return {"status": "Art Consultant Active", "logic": "Synthesis-v3"}
-
-# 5. MAIN CHAT ENDPOINT
+# 5. MAIN CHAT ENDPOINT (/chat)
+# Conceptual Explanation: The orchestrator. It manages the asynchronous 
+# lifecycle of the request, from local PII scrubbing to the final garbage 
+# collection (gc) of the message buffer to optimize Replit's memory usage.
 @app.post("/chat")
 async def process_chat(request: ChatRequest):
     from openai import OpenAI
@@ -76,13 +78,11 @@ async def process_chat(request: ChatRequest):
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=messages,
-            temperature=0.6, # Creative balance
+            temperature=0.6, # Balanced for creative yet logical synthesis
             max_tokens=900
         )
 
         reply = response.choices[0].message.content
-
-        # 6. MEMORY CLEANUP
         del messages, safe_input
         gc.collect()
 
