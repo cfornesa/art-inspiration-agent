@@ -8,7 +8,7 @@ from typing import List, Dict
 
 app = FastAPI(title="Art Inspiration Agent")
 
-# 1. CORS CONFIGURATION (Essential for Replit to Hostinger communication)
+# 1. CORS CONFIGURATION
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,64 +16,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # 2. PRIVACY SCRUBBER (Redacts PII, SSNs, and Physical Addresses)
 def redact_pii(text: str) -> str:
     patterns = {
         "EMAIL": r'[\w\.-]+@[\w\.-]+\.\w+',
-        "PHONE":
-        r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}',
-        "SSN":
-        r'\b(?!666|000|9\d{2})\d{3}[- ]?(?!00)\d{2}[- ]?(?!0000)\d{4}\b',
-        "ADDRESS":
-        r'\d{1,5}\s\w+.\s(\b\w+\b\s){1,2}\w+,\s\w+,\s[A-Z]{2}\s\d{5}'
+        "PHONE": r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}',
+        "SSN": r'\b(?!666|000|9\d{2})\d{3}[- ]?(?!00)\d{2}[- ]?(?!0000)\d{4}\b',
+        "ADDRESS": r'\d{1,5}\s\w+.\s(\b\w+\b\s){1,2}\w+,\s\w+,\s[A-Z]{2}\s\d{5}'
     }
     for label, pattern in patterns.items():
-        text = re.sub(pattern,
-                      f"[{label}_REDACTED]",
-                      text,
-                      flags=re.IGNORECASE)
+        text = re.sub(pattern, f"[{label}_REDACTED]", text, flags=re.IGNORECASE)
     return text
 
-
-# 3. INTEGRATED GAIL FRAMEWORK (With Diversity & Originality Protocols)
+# 3. INTEGRATED GAIL FRAMEWORK (With Language & Scope Safeguards)
 def get_art_system_prompt():
     """
     GOALS: Empower artists to overcome blocks with sophisticated, high-concept prompts.
     ACTIONS: 
         - Provide three 'vibes': Experimental, Classical, or Abstract.
-        - DIVERSITY PROTOCOL: Actively pull inspiration from non-Western canons 
-          (e.g., Islamic geometry, Indigenous patterns, or African futurism).
-        - ORIGINALITY PROTOCOL: Avoid overused cliches; prioritize sensory 
-          descriptions (textures/smells) to drive visual imagination.
+        - DIVERSITY PROTOCOL: Pull inspiration from non-Western canons (e.g., Islamic geometry, Wabi-sabi).
+        - SCOPE GUARD: If a query is unrelated to art, aesthetics, or creativity, refuse by saying: 
+          'I focus solely on art,' and then pivot to a related artistic concept.
     INFORMATION: 
         - Reference global art history and technical terminology (Sfumato, Impasto).
-        - Respect [REDACTED] placeholders; focus on the artistic essence.
-    LANGUAGE: Poetic, encouraging, intellectually sophisticated, and non-judgmental.
+        - Respect [REDACTED] placeholders.
+    LANGUAGE: 
+        - STRICTURE: RESPOND IN ENGLISH ONLY. 
+        - TONE: Poetic, encouraging, intellectually sophisticated, and non-judgmental.
     """
     return (
-        "You are an Expert Art Consultant and Historian.\n\n"
+        "You are an Expert Art Consultant and Historian. YOU MUST RESPOND IN ENGLISH ONLY.\n\n"
         "GOALS:\n"
         "Help the artist navigate creative exhaustion by providing rigorous and diverse inspiration.\n\n"
-        "ACTIONS (ORIGINALITY & DIVERSITY PROTOCOL):\n"
-        "1. Identify and bypass Western-centric cliches. Instead of 'Starry Nights,' "
-        "suggest concepts based on 'Wabi-sabi' (the beauty of imperfection) or "
-        "'Horror Vacui' (the fear of empty space).\n"
-        "2. Synthesis: Combine two unrelated concepts (e.g., 'Biomorphic architecture' "
-        "meets 'Byzantine gold-leaf techniques').\n"
-        "3. Cross-Sensory Prompts: Describe a scent or a sound and ask the artist to "
-        "render it as a texture.\n\n"
-        "INFORMATION & LANGUAGE:\n"
-        "Use precise historical terminology. Maintain an inspiring yet academic tone. "
-        "If you encounter [REDACTED], treat it as a 'mysterious void' that adds to the art. "
-        "Respond in English only and redirect any non-art queries to 'I focus solely on art' and, if possible, suggest a related art concept."
+        "ACTIONS:\n"
+        "1. Identify and bypass Western-centric cliches. Focus on 'Wabi-sabi' or 'Horror Vacui'.\n"
+        "2. Synthesis: Combine unrelated concepts (e.g., 'Biomorphic architecture' meets 'Byzantine gold-leaf').\n"
+        "3. SCOPE CONTROL: If the user asks about non-art topics (politics, math, general chat), "
+        "state 'I focus solely on art' and suggest a related art concept to pivot the conversation.\n\n"
+        "INFORMATION:\n"
+        "Use precise historical terminology. Treat [REDACTED] as a 'mysterious void' that adds to the art.\n\n"
+        "LANGUAGE:\n"
+        "Maintain an inspiring yet academic tone. STRICTLY ENGLISH RESPONSES ONLY."
     )
-
 
 class ChatRequest(BaseModel):
     message: str
     history: List[Dict] = []
-
 
 # 4. HEALTH CHECK (Verifies server status and privacy layers)
 @app.get("/")
@@ -84,11 +72,9 @@ async def health():
         "privacy": "Full-Scrub-Active"
     }
 
-
 # 5. MAIN CHAT ENDPOINT
 @app.post("/chat")
 async def process_chat(request: ChatRequest):
-    # DEFERRED IMPORT: Minimizes RAM usage during idle time
     from openai import OpenAI
 
     # Redact input locally
@@ -100,17 +86,17 @@ async def process_chat(request: ChatRequest):
 
     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 
-    # Construct message chain for DeepSeek-V3
-    messages = [{
-        "role": "system",
-        "content": get_art_system_prompt()
-    }] + request.history
+    # Construct message chain
+    messages = [{"role": "system", "content": get_art_system_prompt()}] + request.history
     messages.append({"role": "user", "content": safe_input})
 
     try:
-        # Utilizing DeepSeek-V3 for creative prose and artistic synthesis
-        response = client.chat.completions.create(model="deepseek-chat",
-                                                  messages=messages)
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=messages,
+            # Lowering temperature slightly to increase instruction following
+            temperature=0.7
+        )
 
         reply = response.choices[0].message.content
 
@@ -123,8 +109,6 @@ async def process_chat(request: ChatRequest):
         gc.collect()
         return {"error": f"Creative process interrupted: {str(e)}"}
 
-
 if __name__ == "__main__":
     import uvicorn
-    # Optimized run for Replit
     uvicorn.run(app, host="0.0.0.0", port=5000)
