@@ -9,9 +9,9 @@ from typing import List, Dict
 app = FastAPI(title="Art Inspiration Agent")
 
 # 1. CORS PROTOCOL (Cross-Origin Resource Sharing)
-# Conceptual Explanation: This acts as a digital handshake, allowing the 
-# Hostinger-hosted UI to securely communicate with the Replit-hosted logic 
-# while bypassing default browser security restrictions on cross-domain requests.
+# CONCEPTUAL EXPLANATION: This acts as a digital handshake. It allows your 
+# Hostinger domain to securely request data from your Replit server, bypassing 
+# browser-level security blocks that prevent cross-site communication.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,9 +20,9 @@ app.add_middleware(
 )
 
 # 2. PRIVACY SCRUBBER (PII Sanitization)
-# Conceptual Explanation: Implements "Privacy-by-Design." By using Regex to 
-# redact sensitive data patterns (Emails, SSNs, Addresses) locally, we minimize 
-# the risk of leaking user PII to the LLM or external logs.
+# CONCEPTUAL EXPLANATION: Implements "Privacy-by-Design." This uses Regular 
+# Expressions (Regex) to redact sensitive user data (Emails, SSNs, Addresses) 
+# locally before transmission, ensuring PII never reaches the model or logs.
 def redact_pii(text: str) -> str:
     patterns = {
         "EMAIL": r'[\w\.-]+@[\w\.-]+\.\w+',
@@ -35,9 +35,9 @@ def redact_pii(text: str) -> str:
     return text
 
 # 3. GAIL ART SYNTHESIS PROMPT (The "Synthesis" Logic)
-# Conceptual Explanation: This protocol anchors the AI in a specific workflow: 
-# Context (Theory) -> Material (Chemistry) -> Technique (Studio Application). 
-# It prevents "shallow" AI responses by forcing a multidisciplinary analysis.
+# CONCEPTUAL EXPLANATION: This protocol anchors the agent in an MFA-style 
+# advisory role. It forces a specific flow: (A) Contextual/Theoretical Why, 
+# (B) Material Properties, and (C) Technical How.
 def get_art_system_prompt():
     return (
         "You are an Expert Art Consultant. YOU MUST RESPOND IN ENGLISH ONLY.\n\n"
@@ -46,23 +46,25 @@ def get_art_system_prompt():
         "ACTIONS:\n"
         "1. DUAL-INTENT HANDLING: Structure as: (A) Conceptual Framework, (B) Material & Technical Application, and (C) Archival Standard.\n"
         "2. TECHNICAL PRECISION: Specify archival chemistry (pH-neutral, lightfastness, acid-free) in every process.\n"
-        "3. RELEVANT LINKS: End every response with: Relevant Links: https://www.google.com/search?q=[Topic+Material+Technique+Tutorial]\n"
+        "3. RELEVANT LINKS: At the end of every response, provide a search-based technical resource link.\n"
+        "   Format exactly: Relevant Links: https://www.google.com/search?q=[Topic+Material+Technique+Tutorial]\n"
         "4. SCOPE CONTROL: For non-art topics, state 'I focus solely on art' and pivot to an artistic technique.\n\n"
-        "LANGUAGE: EXECUTIVE CONCISCENESS. RESPOND IN ENGLISH ONLY. LIMIT: 400 words."
+        "LANGUAGE:\n"
+        "EXECUTIVE CONCISCENESS. Keep responses high-density and under 400 words. STRICTLY ENGLISH ONLY."
     )
 
 # 4. DATA MODELING (Pydantic Schema)
-# Conceptual Explanation: Ensures the structural integrity of the request. 
-# It validates that the incoming payload contains both the current message 
-# and the conversation history necessary for maintaining stateful dialogue.
+# CONCEPTUAL EXPLANATION: Validates the structural integrity of incoming JSON. 
+# This prevents server crashes by ensuring the 'message' and 'history' fields 
+# are correctly typed before processing.
 class ChatRequest(BaseModel):
     message: str
     history: List[Dict] = []
 
-# 5. MAIN CHAT ENDPOINT (/chat)
-# Conceptual Explanation: The orchestrator. It manages the asynchronous 
-# lifecycle of the request, from local PII scrubbing to the final garbage 
-# collection (gc) of the message buffer to optimize Replit's memory usage.
+# 5. MAIN API ENDPOINT (/chat)
+# CONCEPTUAL EXPLANATION: Orchestrates the request lifecycle. Manages 
+# asynchronous communication, local scrubbing, and garbage collection (gc) 
+# to optimize Replit's memory allocation for stateful conversations.
 @app.post("/chat")
 async def process_chat(request: ChatRequest):
     from openai import OpenAI
@@ -78,7 +80,7 @@ async def process_chat(request: ChatRequest):
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=messages,
-            temperature=0.6, # Balanced for creative yet logical synthesis
+            temperature=0.6,
             max_tokens=900
         )
 
