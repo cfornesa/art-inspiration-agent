@@ -1,7 +1,10 @@
 """
+================================================================================
 SYSTEM ARCHITECT: Chris Fornesa
 PROJECT: Art Inspiration Agent (Mistral Edition)
-PURPOSE: Bridging technical rigor with studio practice through ethical AI.
+MISSION: Bridging Data Science, Social Science, and Studio Practice.
+GOVERNANCE: Ethical AI usage, Carbon-neutral grid sourcing, PII Sovereignty.
+================================================================================
 """
 
 import os
@@ -13,12 +16,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 
-# INITIALIZATION: FastAPI handles the high-performance asynchronous web routing.
+# APP INITIALIZATION
+# FastAPI is selected for its asynchronous capabilities, reducing server 
+# idle time and optimizing energy consumption per request.
 app = FastAPI(title="Art Inspiration Agent - Mistral Edition")
 
-# 1. CORS PROTOCOL (Digital Handshake)
-# Enables cross-origin resource sharing, allowing the Hostinger frontend to 
-# communicate securely with the Replit backend.
+# 1. CORS PROTOCOL (The "Digital Handshake")
+# ARCHITECTURAL NOTE: Enables cross-domain synthesis with Hostinger-hosted 
+# frontends while maintaining backend security protocols.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,9 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. PRIVACY SCRUBBER (PII Sanitization)
-# Central to the mission of Ethical AI: Sanitizes user data locally via Regex 
-# to ensure sensitive information never reaches the LLM training clusters.
+# 2. PRIVACY SCRUBBER (PII Sanitization Layer)
+# MISSION ALIGNMENT: Prevents the extraction of user data for unethical 
+# LLM training, ensuring data sovereignty remains with the user.
 PII_PATTERNS = {
     "EMAIL": re.compile(r'[\w\.-]+@[\w\.-]+\.\w+', re.IGNORECASE),
     "PHONE": re.compile(r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}'),
@@ -37,14 +42,14 @@ PII_PATTERNS = {
 }
 
 def redact_pii(text: str) -> str:
-    """Iterates through defined patterns and replaces sensitive data with labels."""
+    """Executes local de-identification before query transmission to external APIs."""
     for label, pattern in PII_PATTERNS.items():
         text = pattern.sub(f"[{label}_REDACTED]", text)
     return text
 
-# 3. STUDIO PROTOCOL: SYSTEM PROMPT
-# Hard-coding constraints ensures the agent maintains MFA-level technical rigor
-# and archival accuracy (pH-neutrality, lightfastness, ASTM standards).
+# 3. STUDIO PROTOCOL (System Prompt Engineering)
+# FRAMEWORK: Translating MFA-level studio standards into algorithmic constraints.
+# Emphasis on Archival Standard ensures technical rigor in artistic advice.
 def get_art_system_prompt():
     return (
         "You are an Expert Art Consultant. YOU MUST RESPOND IN ENGLISH ONLY.\n\n"
@@ -52,10 +57,10 @@ def get_art_system_prompt():
         "Provide dense, actionable, and synthesized expertise. Transition from theory to studio practice.\n\n"
         "ACTIONS:\n"
         "1. DUAL-INTENT HANDLING: Structure as: (A) Conceptual Framework, (B) Material & Technical Application, and (C) Archival Standard.\n"
-        "2. TECHNICAL PRECISION: Specify archival chemistry (pH-neutral, lightfastness, acid-free) in every process.\n"
-        "3. RELEVANT LINKS: Provide search-based technical resource links using the Search-Path Protocol.\n"
+        "2. TECHNICAL PRECISION: Specify archival chemistry (pH-neutral, lightfastness, acid-free).\n"
+        "3. RELEVANT LINKS: Provide search-based technical resource links.\n"
         "   Format exactly: Relevant Links: https://www.google.com/search?q=[Topic+Material+Technique+Tutorial]\n"
-        "4. SCOPE CONTROL: For non-art topics, pivot to an artistic technique.\n\n"
+        "4. SCOPE CONTROL: For non-art topics, state 'I focus solely on art' and pivot to an artistic technique.\n\n"
         "LANGUAGE: Executive conciseness under 400 words. English only."
     )
 
@@ -64,49 +69,46 @@ class ChatRequest(BaseModel):
     history: List[Dict] = []
 
 # 4. HEALTH CHECK (System Vitality)
-# Required for Replit Deployments to acknowledge the system is live and prevent auto-termination.
+# REQUIRED: Prevents Replit Deployment auto-termination by responding to 
+# infrastructure pings at the root URL.
 @app.get("/")
 async def health_check():
     return {
         "status": "online", 
         "agent": "Art Inspiration Agent",
-        "provider": "Mistral AI",
-        "model": "ministral-14b-2512",
-        "standards": "PII-Redaction/Archival-Focus"
+        "standards": "PII-Redaction/Archival-Focus/Mistral-Sovereignty"
     }
 
-# 5. MAIN API ENDPOINT: /chat
+# 5. MAIN API ENDPOINT (/chat)
 @app.post("/chat")
 async def process_chat(request: ChatRequest):
     from openai import OpenAI
 
-    # STEP 1: Local Redaction (The Ethical Guardrail)
+    # STEP 1: Privacy Scrubbing (Local Execution)
     safe_input = redact_pii(request.message)
     api_key = os.environ.get('MISTRAL_API_KEY')
 
     if not api_key:
-        return {"reply": "Error: MISTRAL_API_KEY is not configured."}
+        return {"reply": "Error: MISTRAL_API_KEY not configured in Secrets."}
 
-    # STEP 2: API Orchestration
-    # Mistral provides frontier reasoning with a lower carbon footprint than US counterparts.
+    # STEP 2: Model Routing
+    # CHOICE: Mistral AI is prioritized for environmental transparency and 
+    # French low-carbon energy grid sourcing.
     client = OpenAI(api_key=api_key, base_url="https://api.mistral.ai/v1")
-
     messages = [{"role": "system", "content": get_art_system_prompt()}] + request.history
     messages.append({"role": "user", "content": safe_input})
 
     try:
-        # Utilizing Ministral 14B for its superior reasoning/cost ratio.
+        # Utilizing Ministral 14B Reasoning for high-integrity logic.
         response = client.chat.completions.create(
             model="ministral-14b-latest", 
             messages=messages,
-            temperature=0.15, # Low temperature ensures deterministic, technical accuracy.
+            temperature=0.15, # Deterministic setting for archival accuracy.
             max_tokens=900
         )
-
         reply_content = response.choices[0].message.content
 
-        # STEP 3: Memory Cleanup (Environmental Focus)
-        # Explicitly freeing up memory to maintain small server footprint.
+        # STEP 3: Ecological Efficiency (Garbage Collection)
         del messages, safe_input
         gc.collect()
 
@@ -118,7 +120,7 @@ async def process_chat(request: ChatRequest):
 
 # 6. REPLIT PRODUCTION RUNNER
 if __name__ == "__main__":
-    # Dynamically binds to the port assigned by Replit's infrastructure.
+    # OS Environment lookup allows for dynamic port allocation.
     port = int(os.environ.get("PORT", 5000))
-    print(f"Server starting on port {port}...")
+    # Using 'main:app' prevents multiple process instances in cloud environments.
     uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info")
