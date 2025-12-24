@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 
-app = FastAPI(title="Art Inspiration Agent")
+app = FastAPI(title="Art Inspiration Agent - Mistral Edition")
 
 # 1. CORS PROTOCOL (Digital Handshake)
 app.add_middleware(
@@ -17,7 +17,6 @@ app.add_middleware(
 )
 
 # 2. PRIVACY SCRUBBER (PII Sanitization)
-# We compile the patterns for better performance
 PII_PATTERNS = {
     "EMAIL": re.compile(r'[\w\.-]+@[\w\.-]+\.\w+', re.IGNORECASE),
     "PHONE": re.compile(r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}'),
@@ -50,15 +49,15 @@ class ChatRequest(BaseModel):
     message: str
     history: List[Dict] = []
 
-# --- NEW: HEALTH CHECK ROUTE ---
-# This prevents the 404 error that causes Replit to terminate the deployment.
+# --- UPDATED: HEALTH CHECK ROUTE ---
 @app.get("/")
 async def health_check():
     return {
         "status": "online", 
         "agent": "Art Inspiration Agent",
-        "system_version": "1.0.1",
-        "provider": "DeepSeek-V3"
+        "system_version": "1.1.0",
+        "provider": "Mistral AI",
+        "model": "ministral-14b-reasoning-2512"
     }
 
 # 4. MAIN API ENDPOINT (/chat)
@@ -67,21 +66,24 @@ async def process_chat(request: ChatRequest):
     from openai import OpenAI
 
     safe_input = redact_pii(request.message)
-    api_key = os.environ.get('DEEPSEEK_API_KEY')
+    # Ensure you set MISTRAL_API_KEY in your Replit/Environment Secrets
+    api_key = os.environ.get('MISTRAL_API_KEY')
 
     if not api_key:
-        return {"error": "API Key missing in environment variables."}
+        return {"error": "Mistral API Key missing in environment variables."}
 
-    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+    # Mistral's API is OpenAI-compatible. Use the standard v1 endpoint.
+    client = OpenAI(api_key=api_key, base_url="https://api.mistral.ai/v1")
 
     messages = [{"role": "system", "content": get_art_system_prompt()}] + request.history
     messages.append({"role": "user", "content": safe_input})
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            # Using the 14B Reasoning model for high-integrity studio advice
+            model="ministral-14b-reasoning-2512",
             messages=messages,
-            temperature=0.6,
+            temperature=0.15, # Lower temperature for higher technical precision
             max_tokens=900
         )
 
@@ -98,5 +100,4 @@ async def process_chat(request: ChatRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    # Important: Replit Autoscale needs the host 0.0.0.0
     uvicorn.run(app, host="0.0.0.0", port=5000)
