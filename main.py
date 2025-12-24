@@ -1,3 +1,9 @@
+"""
+SYSTEM ARCHITECT: Chris Fornesa
+PROJECT: Art Inspiration Agent (Mistral Edition)
+PURPOSE: Bridging technical rigor with studio practice through ethical AI.
+"""
+
 import os
 import re
 import gc
@@ -7,10 +13,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 
+# INITIALIZATION: FastAPI handles the high-performance asynchronous web routing.
 app = FastAPI(title="Art Inspiration Agent - Mistral Edition")
 
 # 1. CORS PROTOCOL (Digital Handshake)
-# Essential for allowing your website frontend to communicate with this Replit backend.
+# Enables cross-origin resource sharing, allowing the Hostinger frontend to 
+# communicate securely with the Replit backend.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,7 +27,8 @@ app.add_middleware(
 )
 
 # 2. PRIVACY SCRUBBER (PII Sanitization)
-# Complies with your mission to protect user data from being unethically used by LLMs.
+# Central to the mission of Ethical AI: Sanitizes user data locally via Regex 
+# to ensure sensitive information never reaches the LLM training clusters.
 PII_PATTERNS = {
     "EMAIL": re.compile(r'[\w\.-]+@[\w\.-]+\.\w+', re.IGNORECASE),
     "PHONE": re.compile(r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}'),
@@ -28,12 +37,14 @@ PII_PATTERNS = {
 }
 
 def redact_pii(text: str) -> str:
+    """Iterates through defined patterns and replaces sensitive data with labels."""
     for label, pattern in PII_PATTERNS.items():
         text = pattern.sub(f"[{label}_REDACTED]", text)
     return text
 
-# 3. GAIL ART SYNTHESIS PROMPT
-# Structured to provide MFA-level studio advice with archival precision.
+# 3. STUDIO PROTOCOL: SYSTEM PROMPT
+# Hard-coding constraints ensures the agent maintains MFA-level technical rigor
+# and archival accuracy (pH-neutrality, lightfastness, ASTM standards).
 def get_art_system_prompt():
     return (
         "You are an Expert Art Consultant. YOU MUST RESPOND IN ENGLISH ONLY.\n\n"
@@ -42,61 +53,60 @@ def get_art_system_prompt():
         "ACTIONS:\n"
         "1. DUAL-INTENT HANDLING: Structure as: (A) Conceptual Framework, (B) Material & Technical Application, and (C) Archival Standard.\n"
         "2. TECHNICAL PRECISION: Specify archival chemistry (pH-neutral, lightfastness, acid-free) in every process.\n"
-        "3. RELEVANT LINKS: At the end of every response, provide a search-based technical resource link.\n"
+        "3. RELEVANT LINKS: Provide search-based technical resource links using the Search-Path Protocol.\n"
         "   Format exactly: Relevant Links: https://www.google.com/search?q=[Topic+Material+Technique+Tutorial]\n"
-        "4. SCOPE CONTROL: For non-art topics, state 'I focus solely on art' and pivot to an artistic technique.\n\n"
-        "LANGUAGE:\n"
-        "EXECUTIVE CONCISCENESS. Keep responses high-density and under 400 words. STRICTLY ENGLISH ONLY."
+        "4. SCOPE CONTROL: For non-art topics, pivot to an artistic technique.\n\n"
+        "LANGUAGE: Executive conciseness under 400 words. English only."
     )
 
 class ChatRequest(BaseModel):
     message: str
     history: List[Dict] = []
 
-# --- HEALTH CHECK ROUTE ---
-# Prevents Replit Deployment termination by acknowledging the 'ping'.
+# 4. HEALTH CHECK (System Vitality)
+# Required for Replit Deployments to acknowledge the system is live and prevent auto-termination.
 @app.get("/")
 async def health_check():
     return {
         "status": "online", 
         "agent": "Art Inspiration Agent",
-        "system_version": "1.1.1",
         "provider": "Mistral AI",
-        "model": "ministral-14b-2512"
+        "model": "ministral-14b-2512",
+        "standards": "PII-Redaction/Archival-Focus"
     }
 
-# 4. MAIN API ENDPOINT (/chat)
+# 5. MAIN API ENDPOINT: /chat
 @app.post("/chat")
 async def process_chat(request: ChatRequest):
     from openai import OpenAI
 
-    # Local Redaction before the data leaves the Replit environment
+    # STEP 1: Local Redaction (The Ethical Guardrail)
     safe_input = redact_pii(request.message)
     api_key = os.environ.get('MISTRAL_API_KEY')
 
     if not api_key:
-        return {"reply": "Error: MISTRAL_API_KEY is not configured in server secrets."}
+        return {"reply": "Error: MISTRAL_API_KEY is not configured."}
 
-    # Mistral uses /v1 for its OpenAI-compatible endpoint
+    # STEP 2: API Orchestration
+    # Mistral provides frontier reasoning with a lower carbon footprint than US counterparts.
     client = OpenAI(api_key=api_key, base_url="https://api.mistral.ai/v1")
 
-    # Combine instructions, history, and the new sanitized query
     messages = [{"role": "system", "content": get_art_system_prompt()}] + request.history
     messages.append({"role": "user", "content": safe_input})
 
     try:
-        # Utilizing the 14B Reasoning model for high-integrity studio advice
+        # Utilizing Ministral 14B for its superior reasoning/cost ratio.
         response = client.chat.completions.create(
             model="ministral-14b-latest", 
             messages=messages,
-            temperature=0.15, 
+            temperature=0.15, # Low temperature ensures deterministic, technical accuracy.
             max_tokens=900
         )
 
-        # Explicitly extract the text to ensure the frontend receives a clean string
         reply_content = response.choices[0].message.content
 
-        # Cleanup memory for Replit's efficiency
+        # STEP 3: Memory Cleanup (Environmental Focus)
+        # Explicitly freeing up memory to maintain small server footprint.
         del messages, safe_input
         gc.collect()
 
@@ -104,14 +114,11 @@ async def process_chat(request: ChatRequest):
 
     except Exception as e:
         gc.collect()
-        # Returns the error as the 'reply' so it shows up in the Chat Window
         return {"reply": f"System Error: {str(e)}"}
 
-# 5. REPLIT PRODUCTION RUNNER
+# 6. REPLIT PRODUCTION RUNNER
 if __name__ == "__main__":
-    # Dynamically find the port assigned by Replit (Deployment or Workspace)
+    # Dynamically binds to the port assigned by Replit's infrastructure.
     port = int(os.environ.get("PORT", 5000))
     print(f"Server starting on port {port}...")
-
-    # Using the string "main:app" allows for hot-reloads and better process management
     uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info")
