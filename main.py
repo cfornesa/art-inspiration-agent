@@ -20,7 +20,8 @@ from typing import List, Dict
 app = FastAPI(title="Art Inspiration Agent - Mistral Edition")
 
 # 1. CORS PROTOCOL (The "Digital Handshake")
-# Enables secure communication between the Hostinger frontend and Replit backend.
+# ARCHITECTURAL NOTE: Enables secure communication between the Hostinger frontend 
+# and Replit backend, ensuring cross-domain functional integrity.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,8 +30,8 @@ app.add_middleware(
 )
 
 # 2. PRIVACY SCRUBBER (PII Sanitization Layer)
-# MISSION ALIGNMENT: Prevents data extraction for unethical LLM training.
-# This ensures that user-identifiable data never reaches the external API.
+# MISSION ALIGNMENT: Prevents data extraction for unethical LLM training, 
+# ensuring user sovereignty remains a core pillar of the system architecture.
 PII_PATTERNS = {
     "EMAIL": re.compile(r'[\w\.-]+@[\w\.-]+\.\w+', re.IGNORECASE),
     "PHONE": re.compile(r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}'),
@@ -44,8 +45,8 @@ def redact_pii(text: str) -> str:
         text = pattern.sub(f"[{label}_REDACTED]", text)
     return text
 
-# 3. STUDIO PROTOCOL (System Prompt Engineering)
-# FRAMEWORK: Translating MFA-level studio standards into algorithmic constraints.
+# 3. STUDIO PROTOCOL: SYSTEM PROMPT
+# FRAMEWORK: Translates MFA-level studio standards into algorithmic constraints.
 def get_art_system_prompt():
     return (
         "You are an Expert Art Consultant. YOU MUST RESPOND IN ENGLISH ONLY.\n\n"
@@ -79,7 +80,7 @@ async def health_check():
 async def process_chat(request: ChatRequest):
     from openai import OpenAI
 
-    # STEP 1: Local Privacy Guardrail
+    # STEP 1: Privacy Scrubbing (Local Execution)
     safe_input = redact_pii(request.message)
     api_key = os.environ.get('MISTRAL_API_KEY')
 
@@ -102,7 +103,7 @@ async def process_chat(request: ChatRequest):
         )
         reply_content = response.choices[0].message.content
 
-        # STEP 3: Garbage Collection (Resource Conservation)
+        # STEP 3: Ecological Efficiency (Garbage Collection)
         del messages, safe_input
         gc.collect()
 
@@ -116,5 +117,5 @@ async def process_chat(request: ChatRequest):
 if __name__ == "__main__":
     # OS Environment lookup for dynamic cloud port allocation.
     port = int(os.environ.get("PORT", 5000))
-    # 'main:app' prevents redundant process spawning.
+    # 'main:app' prevents redundant process spawning in the server environment.
     uvicorn.run("main:app", host="0.0.0.0", port=port, log_level="info")
