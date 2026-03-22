@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Art Inspiration Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="font-ibm-plex">
+  <div class="app-container">
+
+    <!-- ── HEADER ── -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="header-title">Art Inspiration Agent</h1>
+        <button id="clearBtn" class="clear-btn" style="display:none;" aria-label="Clear conversation">
+          <!-- trash icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path>
+            <path d="M10 11v6M14 11v6"></path>
+            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"></path>
+          </svg>
+          Clear
+        </button>
+      </div>
+    </header>
+
+    <!-- ── CHAT BODY ── -->
+    <div class="chat-container">
+      <div class="messages-area">
+        <div class="messages-content">
+
+          <!-- Welcome Screen -->
+          <div id="welcomeScreen" class="welcome-screen">
+            <div class="welcome-icon">
+              <!-- palette icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"></circle>
+                <circle cx="15.5" cy="9" r="1.5" fill="currentColor" stroke="none"></circle>
+                <circle cx="7" cy="14" r="1.5" fill="currentColor" stroke="none"></circle>
+                <circle cx="17" cy="14" r="1.5" fill="currentColor" stroke="none"></circle>
+                <path d="M12 20c2 0 4-1.5 4-4h-8c0 2.5 2 4 4 4z"></path>
+              </svg>
+            </div>
+            <h2 class="welcome-title">Art Inspiration Agent</h2>
+            <p class="welcome-text">
+              Share a creative idea or ask for help with a technique, medium, or style.
+              Fine-tune responses using the preference controls below.
+            </p>
+          </div>
+
+          <!-- Live messages injected here by script.js -->
+          <div id="messagesContainer" class="messages-container"></div>
+
+          <!-- Loading indicator -->
+          <div id="loadingIndicator" class="loading-indicator" style="display:none;">
+            <div class="loading-bubble">
+              <div class="loading-content">
+                <div class="loading-dots">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </div>
+                <span class="loading-text">Consulting the studio&hellip;</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="messagesEnd"></div>
+        </div>
+      </div>
+
+      <!-- ── INPUT AREA ── -->
+      <div class="input-area">
+        <div class="input-content">
+          <form id="chatForm" class="chat-form" autocomplete="off">
+
+            <!-- Preference Controls -->
+            <div class="preferences-bar">
+
+              <div class="pref-group">
+                <label class="pref-label" for="styleSelect">Style</label>
+                <div class="select-wrapper">
+                  <select id="styleSelect" class="pref-select">
+                    <option value="">Any</option>
+                    <option value="impressionist">Impressionist</option>
+                    <option value="abstract">Abstract</option>
+                    <option value="realist">Realist</option>
+                    <option value="surrealist">Surrealist</option>
+                    <option value="expressionist">Expressionist</option>
+                    <option value="minimalist">Minimalist</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pref-group">
+                <label class="pref-label" for="mediumSelect">Medium</label>
+                <div class="select-wrapper">
+                  <select id="mediumSelect" class="pref-select">
+                    <option value="">Any</option>
+                    <option value="oil paint">Oil Paint</option>
+                    <option value="watercolor">Watercolor</option>
+                    <option value="acrylic">Acrylic</option>
+                    <option value="charcoal">Charcoal</option>
+                    <option value="pencil">Pencil</option>
+                    <option value="digital">Digital</option>
+                    <option value="mixed media">Mixed Media</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pref-group">
+                <label class="pref-label" for="skillSelect">Level</label>
+                <div class="select-wrapper">
+                  <select id="skillSelect" class="pref-select">
+                    <option value="">Any</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pref-group">
+                <label class="pref-label" for="focusSelect">Focus</label>
+                <div class="select-wrapper">
+                  <select id="focusSelect" class="pref-select">
+                    <option value="">Any</option>
+                    <option value="color theory">Color Theory</option>
+                    <option value="composition">Composition</option>
+                    <option value="texture">Texture</option>
+                    <option value="light and shadow">Light &amp; Shadow</option>
+                    <option value="perspective">Perspective</option>
+                    <option value="form">Form</option>
+                  </select>
+                </div>
+              </div>
+
+            </div><!-- /.preferences-bar -->
+
+            <!-- Message Input Row -->
+            <div class="input-section">
+              <div class="textarea-container">
+                <textarea
+                  id="messageInput"
+                  class="message-textarea"
+                  placeholder="Describe your creative idea or ask about a technique…"
+                  rows="1"
+                  aria-label="Message input"
+                ></textarea>
+              </div>
+              <button id="sendButton" class="send-button" type="submit" disabled aria-label="Send message">
+                <span id="sendIcon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                       viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </span>
+                <span id="loadingSpinner" class="loading-spinner" style="display:none;">
+                  <span class="spinner"></span>
+                </span>
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div><!-- /.chat-container -->
+
+  </div><!-- /.app-container -->
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

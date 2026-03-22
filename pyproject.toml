@@ -5,7 +5,7 @@ description = "AI art inspiration agent using DeepSeek API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.125.0",
-    "openai>=2.13.0",
+    "mistralai>=1.0.0,<2.0.0",
     "pydantic>=2.12.5",
     "uvicorn>=0.38.0",
 ]
