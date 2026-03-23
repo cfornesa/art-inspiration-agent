@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional
 
 from model import generate_response
+from rag_module import get_art_context 
 
 # Operational Transparency Configuration
 logging.basicConfig(level=logging.INFO)
@@ -92,9 +93,16 @@ async def process_chat(request: ArtChatRequest):
     preferences for session-level fine-tuning.
     """
     try:
+        # ── RAG: retrieve relevant art knowledge and prepend to user input ──
+        art_context = get_art_context(request.message)
+        augmented_input = (
+            f"[Retrieved Reference Material]\n{art_context}\n\n"
+            f"[User Message]\n{request.message}"
+        )
+        # ────────────────────────────────────────────────────────────────────
         preferences_dict = request.preferences.model_dump() if request.preferences else None
         result = generate_response(
-            user_input=request.message,
+            user_input=augmented_input,   # ← was: request.message
             history=request.history,
             preferences=preferences_dict,
         )

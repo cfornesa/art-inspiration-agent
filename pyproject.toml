@@ -1,11 +1,23 @@
 [project]
 name = "art-inspiration-agent"
 version = "0.1.0"
-description = "AI art inspiration agent using DeepSeek API"
+description = "AI art inspiration agent using Mistral AI API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.125.0",
     "mistralai>=1.0.0,<2.0.0",
     "pydantic>=2.12.5",
     "uvicorn>=0.38.0",
+    "faiss-cpu>=1.8.0",
+    "langchain>=0.3.0",
+    "langchain-mistralai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "replit-object-storage>=1.0.0",
+    "pypdf>=4.0.0",
+    "python-docx>=1.1.0",
+    "docx2txt>=0.8",
+    "langchain-text-splitters>=1.1.1",
 ]
+
+[tool.setuptools]
+packages = []
